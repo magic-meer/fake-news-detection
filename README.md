@@ -180,8 +180,19 @@ extension posts to it. `ML_API_URL` in `fake-news-detection/.env` is set to
 > `php -S` worker (`ServeCommand::$passthroughVariables`), so the app never sees them and
 > silently falls back to `.env`.
 
-### 3. First-Time App Setup
-Already done if you cloned this working tree. On a fresh clone:
+### 3. First Boot
+Nothing to do. `.env`, `APP_KEY`, `database/database.sqlite` and the SQLite schema are all
+gitignored, so `docker/entrypoint.sh` creates them the first time the `web` container starts.
+Every step is idempotent and re-runs harmlessly on each restart.
+
+Watch it happen:
+
+```bash
+docker compose logs web | grep -E "key|migrat"
+```
+
+To do it by hand instead:
+
 ```bash
 docker compose run --rm web sh -c \
   "cp .env.example .env && php artisan key:generate && \
