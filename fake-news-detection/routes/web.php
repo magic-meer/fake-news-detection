@@ -12,6 +12,3 @@ Route::get('/history/{id?}', [App\Http\Controllers\PredictionController::class, 
 Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings');
 Route::post('/settings/upload', [App\Http\Controllers\SettingsController::class, 'upload'])->name('settings.upload');
 Route::post('/settings/retrain', [App\Http\Controllers\SettingsController::class, 'retrain'])->name('settings.retrain');
-
-// API routes for browser extension
-Route::post('/api/extension/check', [App\Http\Controllers\Api\ExtensionController::class, 'check']);
