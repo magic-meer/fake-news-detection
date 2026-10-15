@@ -1,5 +1,12 @@
 // Popup script - handles UI logic
 
+// Firefox's `chrome` namespace is callback-based and returns nothing from
+// promise-style calls; `browser` is its promise API. Chrome has no `browser`,
+// so this resolves to the right one in both.
+const api = globalThis.browser ?? chrome;
+
+const API_BASE_URL = 'http://localhost:8000';
+
 document.addEventListener('DOMContentLoaded', async () => {
     const elements = {
         loading: document.getElementById('loading'),
@@ -18,9 +25,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         errorMessage: document.getElementById('error-message')
     };
 
+    // Only the state containers get toggled. The buttons live inside them, so
+    // hiding those too left an empty white card: hideAll() put .hidden on
+    // #analyze-btn and nothing ever took it back off.
+    const stateElements = [
+        elements.loading,
+        elements.error,
+        elements.noArticle,
+        elements.result,
+        elements.analyzeSection
+    ];
+
     // Hide all states
     function hideAll() {
-        Object.values(elements).forEach(el => {
+        stateElements.forEach(el => {
             if (el) el.classList.add('hidden');
         });
     }
@@ -39,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Set prediction badge
         const isFake = result.prediction === 'Fake';
-        elements.predictionBadge.textContent = isFake ? '⚠️ FAKE NEWS' : '✅ REAL NEWS';
+        elements.predictionBadge.textContent = isFake ? 'FAKE NEWS' : 'REAL NEWS';
         elements.predictionBadge.className = `badge ${isFake ? 'badge-fake' : 'badge-real'}`;
 
         // Set confidence
@@ -54,38 +72,79 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Call the Laravel app straight from the popup. This used to round-trip
+    // through background.js, but MV3 background service workers do not run in
+    // Firefox (extensions.backgroundServiceWorker.enabled is locked to false),
+    // so on Firefox nobody ever answered the message.
+    async function analyzeArticle(articleData) {
+        let response;
+        try {
+            response = await fetch(`${API_BASE_URL}/api/extension/check`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: articleData.text,
+                    url: articleData.url,
+                    title: articleData.title
+                })
+            });
+        } catch (e) {
+            throw new Error('Could not reach the NewsGuard server. Is "docker compose up -d" running, and is this extension allowed to access localhost?');
+        }
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Store result for the next time this page is opened
+        await api.storage.local.set({
+            lastResult: {
+                ...data,
+                timestamp: Date.now(),
+                url: articleData.url
+            }
+        });
+
+        return data;
+    }
+
     // Analyze current page
     async function analyzePage() {
         try {
             showState('loading');
 
-            // Get current tab
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+            if (!tab) {
+                showState('noArticle');
+                return;
+            }
 
-            // Extract article from page
-            const articleData = await chrome.tabs.sendMessage(tab.id, { action: 'extract' });
+            // Content script is not injected on browser pages / PDFs
+            let articleData = null;
+            try {
+                articleData = await api.tabs.sendMessage(tab.id, { action: 'extract' });
+            } catch (e) {
+                articleData = null;
+            }
 
             if (!articleData || !articleData.text) {
                 showState('noArticle');
                 return;
             }
 
-            // Send to background for analysis
-            const response = await chrome.runtime.sendMessage({
-                action: 'analyze',
-                data: articleData
-            });
+            const result = await analyzeArticle(articleData);
+            displayResult(result);
 
-            if (response.success) {
-                displayResult(response.result);
-
-                // Send highlight message to content script
-                await chrome.tabs.sendMessage(tab.id, {
-                    action: 'highlight',
-                    result: response.result
-                });
-            } else {
-                throw new Error(response.error || 'Analysis failed');
+            // Highlight the words in the page
+            try {
+                await api.tabs.sendMessage(tab.id, { action: 'highlight', result });
+            } catch (e) {
+                // page may have navigated away; result is still shown
             }
         } catch (error) {
             console.error('Analysis error:', error);
@@ -95,15 +154,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Check for cached result
-    const storage = await chrome.storage.local.get(['lastResult']);
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (storage.lastResult && storage.lastResult.url === tab.url) {
-        // Show cached result
-        displayResult(storage.lastResult);
+    const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+    if (!tab) {
+        showState('noArticle');
     } else {
-        // Show analyze button
-        showState('analyzeSection');
+        const { lastResult } = await api.storage.local.get(['lastResult']);
+        if (lastResult && lastResult.url === tab.url) {
+            displayResult(lastResult);
+        } else {
+            showState('analyzeSection');
+        }
     }
 
     // Event listeners
@@ -111,10 +171,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     elements.retryBtn?.addEventListener('click', analyzePage);
 
     elements.highlightBtn?.addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        const result = await chrome.storage.local.get(['lastResult']);
-        if (result.lastResult) {
-            await chrome.tabs.sendMessage(tab.id, {
+        const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+        const result = await api.storage.local.get(['lastResult']);
+        if (tab && result.lastResult) {
+            await api.tabs.sendMessage(tab.id, {
                 action: 'highlight',
                 result: result.lastResult
             });
@@ -122,10 +182,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     elements.detailsBtn?.addEventListener('click', async () => {
-        const result = await chrome.storage.local.get(['lastResult']);
+        const result = await api.storage.local.get(['lastResult']);
         if (result.lastResult && result.lastResult.history_id) {
-            chrome.tabs.create({
-                url: `http://localhost:8000/history/${result.lastResult.history_id}`
+            api.tabs.create({
+                url: `${API_BASE_URL}/history/${result.lastResult.history_id}`
             });
         }
     });

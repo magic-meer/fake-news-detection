@@ -6,10 +6,13 @@
   box-sizing: border-box;
 }
 
+/* Brand: the blue from icons/icon128.png (#2563EB) -- same value as
+   Tailwind's blue-600, which the web dashboard uses */
+
 body {
   width: 350px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8fafc;
   color: #1f2937;
 }
 
@@ -20,7 +23,12 @@ body {
 .header {
   text-align: center;
   margin-bottom: 20px;
-  color: white;
+  color: #0f172a;
+}
+
+.header img {
+  display: block;
+  margin: 0 auto 6px;
 }
 
 .header h1 {
@@ -31,7 +39,7 @@ body {
 
 .subtitle {
   font-size: 12px;
-  opacity: 0.9;
+  color: #64748b;
 }
 
 .hidden {
@@ -51,7 +59,7 @@ body {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f4f6;
-  border-top-color: #667eea;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -183,12 +191,12 @@ body {
 }
 
 .btn-primary {
-  background: #667eea;
+  background: #2563EB;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #5568d3;
+  background: #1D4ED8;
 }
 
 .btn-secondary {

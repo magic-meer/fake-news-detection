@@ -90,7 +90,7 @@ function highlightWords(words, prediction) {
     });
 }
 
-// Listen for messages from background script
+// Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'extract') {
         const articleData = extractArticleText();
