@@ -1,0 +1,29 @@
+name: newsguard
+
+services:
+  ml:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ml
+    volumes:
+      # retraining reads Fake.csv/True.csv and rewrites the joblib artifacts
+      - ./ml_backend:/app/ml_backend
+      - ./ml_model:/app/ml_model
+    ports:
+      - "8001:8001"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    volumes:
+      - ./fake-news-detection:/var/www/html
+      # keeps the vendor/ baked into the image instead of host-installed
+      - vendor:/var/www/html/vendor
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ml
+
+volumes:
+  vendor:

@@ -1,4 +1,6 @@
-scikit-learn
+# pinned: ml_backend/*.joblib were pickled with scikit-learn 1.7.2
+# and have no cp313 wheels on newer sklearn
+scikit-learn==1.7.2
 numpy
 pandas
 fastapi

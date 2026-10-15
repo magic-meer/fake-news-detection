@@ -1,4 +1,5 @@
 import joblib
+import os
 import re
 import numpy as np
 from fastapi import FastAPI, HTTPException
@@ -10,6 +11,11 @@ import nltk
 
 # Initialize FastAPI app
 app = FastAPI(title="NewsGuard API", version="2.0")
+
+# Paths anchored to the repo, not the cwd uvicorn happens to be started in
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ML_DIR = os.path.join(ROOT, "ml_backend")
+DATA_DIR = os.path.join(ROOT, "ml_model", "kaggle", "input", "fake-and-real-news-dataset")
 
 # Global variables
 model = None
@@ -28,13 +34,15 @@ class NewsRequest(BaseModel):
     text: str
 
 # 1. LOAD ARTIFACTS ON STARTUP
+# sync so /retrain can call it directly after training (an async def would
+# return an un-awaited coroutine and never reload the model)
 @app.on_event("startup")
-async def load_artifacts():
+def load_artifacts():
     global model, vectorizer, stop_words, lemmatizer
     try:
         print("Loading NewsGuard Artifacts...")
-        model = joblib.load("newsguard_model.joblib")
-        vectorizer = joblib.load("newsguard_vectorizer.joblib")
+        model = joblib.load(os.path.join(ML_DIR, "newsguard_model.joblib"))
+        vectorizer = joblib.load(os.path.join(ML_DIR, "newsguard_vectorizer.joblib"))
         
         # Ensure NLTK resources are available (they should be from training)
         try:
@@ -155,6 +163,8 @@ async def retrain_model(request: RetrainRequest, background_tasks: BackgroundTas
         
         try:
             result = train(
+                data_dir=DATA_DIR,
+                output_dir=ML_DIR,
                 max_features=request.max_features, 
                 max_iter=request.max_iter,
                 progress_callback=progress_callback
@@ -178,7 +188,7 @@ async def retrain_model(request: RetrainRequest, background_tasks: BackgroundTas
 # 6. DATA UPLOAD ENDPOINT
 @app.post("/upload-data")
 async def upload_data(fake_csv: UploadFile = File(None), true_csv: UploadFile = File(None)):
-    data_dir = "ml_model/kaggle/input/fake-and-real-news-dataset"
+    data_dir = DATA_DIR
     os.makedirs(data_dir, exist_ok=True)
     
     saved_files = []

@@ -1,1 +1,26 @@
-ml_backend/__pycache__/main.cpython-313.pyc
+# python
+.venv/
+__pycache__/
+*.py[cod]
+.nltk_data/
+.pytest_cache/
+
+# node
+node_modules/
+
+# laravel
+/public/build
+.env
+/vendor
+
+# sqlite (kept per-developer, created by `php artisan migrate`)
+*.sqlite
+*.sqlite-journal
+
+# os / editor cruft
+.DS_Store
+Thumbs.db
+*.log
+
+# trashed files, per nixconfig convention
+*.deleted

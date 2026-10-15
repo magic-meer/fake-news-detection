@@ -1,0 +1,15 @@
+# keep the build context small: everything here is bind-mounted or rebuilt
+.git
+**/vendor
+**/node_modules
+**/.env
+**/__pycache__
+**/*.pyc
+.venv
+.nltk_data
+screenshots
+
+# training data and dead CNN artifacts are bind-mounted at runtime
+ml_model/kaggle
+ml_backend/*.keras
+ml_backend/tokenizer.pkl
