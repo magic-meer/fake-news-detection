@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'History - Fake News Detector')
+@section('title', 'History - NewsGuard')
 
 @section('content')
     <div class="max-w-7xl mx-auto h-[calc(100vh-10rem)]">
@@ -15,7 +15,7 @@
                 </div>
                 <div class="overflow-y-auto flex-1 p-2 space-y-2">
                     @forelse($history as $item)
-                        <a href="{{ route('history', $item->id) }}" class="block p-4 rounded-xl border transition-all {{ isset($selectedPrediction) && $selectedPrediction->id === $item->id ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-indigo-500 dark:ring-indigo-400' : 'border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:bg-slate-50 dark:hover:bg-slate-700/50' }}">
+                        <a href="{{ route('history', $item->id) }}" class="block p-4 rounded-xl border transition-all {{ isset($selectedPrediction) && $selectedPrediction->id === $item->id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-500 dark:ring-blue-400' : 'border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-slate-50 dark:hover:bg-slate-700/50' }}">
                             <div class="flex justify-between items-start mb-2">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $item->prediction === 'Real' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' }}">
                                     {{ $item->prediction }}
@@ -26,7 +26,7 @@
                         </a>
                     @empty
                         <div class="p-8 text-center text-slate-500 dark:text-slate-400">
-                            No history found. <a href="{{ route('home') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Make a prediction</a>.
+                            No history found. <a href="{{ route('home') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Make a prediction</a>.
                         </div>
                     @endforelse
                 </div>

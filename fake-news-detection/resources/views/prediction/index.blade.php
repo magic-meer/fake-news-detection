@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Fake News Detector')
+@section('title', 'NewsGuard')
 
 @section('content')
     <div class="max-w-3xl mx-auto space-y-8">
@@ -107,7 +107,7 @@
             <!-- Loading Overlay -->
             <div x-show="isLoading" x-cloak class="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center">
                 <div class="text-center">
-                    <svg class="animate-spin h-12 w-12 text-indigo-600 dark:text-indigo-400 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg class="animate-spin h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -121,14 +121,14 @@
                 <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-lg inline-flex transition-colors">
                     <button 
                         @click="mode = 'text'" 
-                        :class="mode === 'text' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
+                        :class="mode === 'text' ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
                         class="px-4 py-2 rounded-md text-sm font-medium transition-all"
                     >
                         Paste Text
                     </button>
                     <button 
                         @click="mode = 'url'" 
-                        :class="mode === 'url' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
+                        :class="mode === 'url' ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
                         class="px-4 py-2 rounded-md text-sm font-medium transition-all"
                     >
                         Enter URL
@@ -149,7 +149,7 @@
                             id="news_text" 
                             name="news_text" 
                             rows="8" 
-                            class="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-4 bg-slate-50 dark:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white transition-all"
+                            class="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-4 bg-slate-50 dark:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white transition-all"
                             placeholder="Paste the full text of the news article here..."
                         >{{ old('news_text', $news_text ?? '') }}</textarea>
                         <div class="absolute bottom-3 right-3 text-xs text-slate-400">
@@ -169,13 +169,13 @@
                             id="news_url" 
                             name="news_url" 
                             value="{{ old('news_url', $news_url ?? '') }}"
-                            class="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-4 bg-slate-50 dark:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white transition-all"
+                            class="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-4 bg-slate-50 dark:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white transition-all"
                             placeholder="https://example.com/news-article"
                         >
                         <button 
                             type="button"
                             @click="navigator.clipboard.readText().then(text => { document.getElementById('news_url').value = text; })"
-                            class="flex-shrink-0 px-4 py-2 border border-slate-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-xl text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                            class="flex-shrink-0 px-4 py-2 border border-slate-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-xl text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                             title="Paste from Clipboard"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
@@ -185,7 +185,7 @@
                 </div>
 
                 <div class="mt-6">
-                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:scale-[1.01] active:scale-[0.99]">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.01] active:scale-[0.99]">
                         Analyze Authenticity
                     </button>
                 </div>

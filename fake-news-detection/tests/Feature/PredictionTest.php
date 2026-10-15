@@ -8,7 +8,7 @@ uses(RefreshDatabase::class);
 test('prediction page loads', function () {
     $response = $this->get('/');
     $response->assertStatus(200);
-    $response->assertSee('Fake News Detector');
+    $response->assertSee('NewsGuard');
 });
 
 test('can predict fake news and saves history', function () {

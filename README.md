@@ -1,6 +1,8 @@
-# NewsGuard - AI-Powered Fake News Detection System
+# NewsGuard
 
 <div align="center">
+
+<img src="browser-extension/icons/icon128.png" width="96" alt="NewsGuard">
 
 **A full-stack fake news detection system with explainable AI, web dashboard, and browser extension**
 
@@ -13,10 +15,11 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
+- [Branding](#branding)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Installation](#installation)
@@ -29,7 +32,7 @@
 
 ---
 
-## 🌟 Overview
+## Overview
 
 **NewsGuard** is a comprehensive fake news detection system that combines machine learning, web development, and browser automation to help users identify misinformation online. The system provides:
 
@@ -40,35 +43,59 @@
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔍 Detection Capabilities
-- ✅ Text-based fake news classification (Real vs Fake)
-- ✅ URL-based analysis with automatic content extraction
-- ✅ Confidence score for each prediction
-- ✅ Explainability via LIME (Local Interpretable Model-agnostic Explanations)
+### Detection Capabilities
+- Text-based fake news classification (Real vs Fake)
+- URL-based analysis with automatic content extraction
+- Confidence score for each prediction
+- Explainability via LIME (Local Interpretable Model-agnostic Explanations)
 
-### 🎨 User Interface
-- ✅ Modern, responsive web dashboard (Light/Dark themes)
-- ✅ Real-time loading indicators and progress tracking
-- ✅ Prediction history with detailed logs
-- ✅ Admin settings for dataset upload and model retraining
+### User Interface
+- Modern, responsive web dashboard (Light/Dark themes)
+- Real-time loading indicators and progress tracking
+- Prediction history with detailed logs
+- Admin settings for dataset upload and model retraining
 
-### 🧩 Browser Extension
-- ✅ Chrome & Firefox support (Manifest v3)
-- ✅ Automatic article text extraction
-- ✅ Inline word highlighting (green = real, red = fake)
-- ✅ Popup with instant results and web app integration
+### Browser Extension
+- Chrome & Firefox support (Manifest v3)
+- Automatic article text extraction
+- Inline word highlighting (green = real, red = fake)
+- Popup with instant results and web app integration
 
-### ⚙️ Model Management
-- ✅ Upload custom training datasets (CSV)
-- ✅ Retrain model with configurable parameters
-- ✅ Real-time training progress tracking
-- ✅ Model status monitoring
+### Model Management
+- Upload custom training datasets (CSV)
+- Retrain model with configurable parameters
+- Real-time training progress tracking
+- Model status monitoring
 
 ---
 
-## 🏗️ Architecture
+## Branding
+
+The extension icon is the single source of truth for the whole project. Everything else
+follows from it.
+
+| Token | Value | Where |
+|---|---|---|
+| Primary | `#2563EB` | popup buttons, spinner, every `blue-*` Tailwind class |
+| Primary hover | `#1D4ED8` | button hover state |
+| Mark | `browser-extension/icons/icon128.png` | blue circle with a white tick |
+| Name | NewsGuard | popup, dashboard header, README |
+
+Rules:
+
+- `#2563EB` is exactly Tailwind's `blue-600`, so the dashboard uses plain `blue-*`
+  utilities and the popup uses the literal hex. No second shade of brand blue.
+- The tick appears as the mark, not as text. Do not substitute an emoji for it.
+- Semantic colours are separate and stay separate: `REAL` is green, `FAKE` is red.
+
+Dashboard logo is the icon redrawn as inline SVG (`layouts/app.blade.php`) so it stays crisp
+and inherits `currentColor`; the popup uses the PNG directly.
+
+---
+
+## Architecture
 
 ```
 ┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
@@ -93,7 +120,7 @@
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework**: Laravel Blade Templates
@@ -119,14 +146,12 @@
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
-- PHP 8.2+
-- Python 3.9+
-- Composer
-- Node.js & npm
-- MySQL (or SQLite for development)
+
+Docker. Everything else — PHP 8.4, Composer, Python 3.13, scikit-learn — lives inside the
+images defined in `docker/`.
 
 ### 1. Clone Repository
 ```bash
@@ -134,47 +159,73 @@ git clone https://github.com/yourusername/fake-news-detection.git
 cd fake-news-detection
 ```
 
-### 2. Laravel Setup
+### 2. Build & Start
 ```bash
+docker compose build      # first run only
+docker compose up -d
+docker compose logs -f ml # wait for "Application startup complete"
+```
+
+| Service | URL |
+|---|---|
+| Laravel dashboard | http://localhost:8000 |
+| FastAPI ML API | http://localhost:8001 |
+
+The ML API runs on **8001**, not 8000 — port 8000 belongs to Laravel because the browser
+extension posts to it. `ML_API_URL` in `fake-news-detection/.env` is set to
+`http://ml:8001` (the compose service name).
+
+> Do not move that value into `docker-compose.yml`'s `environment:` block:
+> `php artisan serve` only forwards `APP_ENV`, `PATH` and a dozen other variables to its
+> `php -S` worker (`ServeCommand::$passthroughVariables`), so the app never sees them and
+> silently falls back to `.env`.
+
+### 3. First-Time App Setup
+Already done if you cloned this working tree. On a fresh clone:
+```bash
+docker compose run --rm web sh -c \
+  "cp .env.example .env && php artisan key:generate && \
+   touch database/database.sqlite && php artisan migrate --force"
+```
+
+### 4. Run the Tests
+```bash
+docker compose run --rm web php artisan test
+```
+
+### Optional: Browser Extension
+`chrome://extensions/` → enable Developer mode → **Load unpacked** → select
+`browser-extension/`. No build step; the extension talks to the Laravel app on port 8000.
+
+### Running Without Docker
+
+Requires PHP 8.4+ (Symfony 8 needs it), Composer, and Python 3.13.
+
+```bash
+# Laravel
 cd fake-news-detection
 composer install
-npm install
-cp .env.example .env
+cp .env.example .env && echo 'ML_API_URL=http://127.0.0.1:8001' >> .env
 php artisan key:generate
-php artisan migrate
-npm run build
+touch database/database.sqlite && php artisan migrate
+php artisan serve                                   # :8000
+
+# FastAPI ML Backend
+cd ..
+python3.13 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cd ml_backend && ../.venv/bin/uvicorn main:app --reload --port 8001
 ```
 
-### 3. Python ML Backend
-```bash
-cd ../ml_backend
-pip install -r requirements.txt
-```
+The trained artifacts are committed (`newsguard_model.joblib`, `newsguard_vectorizer.joblib`)
+and were pickled with **scikit-learn 1.7.2**, which `requirements.txt` pins — a newer
+scikit-learn will fail to load them.
 
-**Note**: Ensure you have the trained model files:
-- `newsguard_model.joblib`
-- `newsguard_vectorizer.joblib`
-
-### 4. Start Services
-```bash
-# Terminal 1: Laravel
-cd fake-news-detection
-php artisan serve
-
-# Terminal 2: FastAPI ML Backend
-cd ml_backend
-uvicorn main:app --reload
-```
-
-### 5. Configure Environment
-Update `.env` in the Laravel directory:
-```env
-ML_API_URL=http://localhost:8000
-```
+Frontend assets: the routed views load Tailwind from a CDN, so no build is required. Only
+the unrouted `welcome.blade.php` uses `@vite`; build it with `pnpm install && pnpm run build`.
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### Web Dashboard
 1. Navigate to `http://localhost:8000`
@@ -195,7 +246,7 @@ ML_API_URL=http://localhost:8000
 
 ---
 
-## 🧩 Browser Extension
+## Browser Extension
 
 ### Installation
 1. Open `chrome://extensions/` (Chrome) or `about:debugging#/runtime/this-firefox` (Firefox)
@@ -215,13 +266,13 @@ See [`browser-extension/README.md`](browser-extension/README.md) for more detail
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 ![webapp_home_screenshot](./screenshots/image.png)
 
 ---
 
-## 🤖 Model Details
+## Model Details
 
 ### Training Data
 - **Dataset**: Kaggle "Fake and real news dataset"
@@ -244,7 +295,7 @@ See [`browser-extension/README.md`](browser-extension/README.md) for more detail
 
 ---
 
-## 📡 API Documentation
+## API Documentation
 
 ### ML API Endpoints
 
@@ -263,7 +314,8 @@ Predict if text is fake or real.
 {
   "status": "success",
   "prediction": "Real",
-  "confidence": 0.92
+  "confidence_score": 0.92,
+  "raw_probability": 0.92
 }
 ```
 
@@ -332,7 +384,7 @@ Extension endpoint for article analysis.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these guidelines:
 
@@ -344,13 +396,13 @@ Contributions are welcome! Please follow these guidelines:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 👤 Author
+## Author
 
 **Meher Ali**
 - GitHub: [@meheralimeer](https://github.com/meheralimeer)
@@ -358,7 +410,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Kaggle Fake and real news dataset](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset)
 - [LIME - Local Interpretable Model-agnostic Explanations](https://github.com/marcotcr/lime)
@@ -367,5 +419,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-Made with ❤️ using Laravel, FastAPI, and TailwindCSS
+Made with using Laravel, FastAPI, and TailwindCSS
 </div>
